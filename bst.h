@@ -42,6 +42,6 @@ extern int bst_get_ith(BST_PTR t, int i);
 
 extern int bst_get_nearest(BST_PTR t, int x);
 
-extern int bst_num_geq(BST_PTR *t, int x);
+extern int bst_num_geq(BST_PTR t, int x);
 
-extern int bst_num_leq(BST_PTR *t, int x);
+extern int bst_num_leq(BST_PTR t, int x);
