@@ -1,6 +1,50 @@
 #include <assert.h>
 #include "bst.h"
 
+void t_num_elem() {
+    int a[] = {8, 2, 6, 9, 11, 3, 7};
+	
+    BST_PTR t = bst_create();
+	BST_PTR t2;
+	
+    for(i=0; i<7; i++)
+        bst_insert(t, a[i]);
+
+    t2 = t;
+	
+	while (t2 != NULL) {
+		assert (t2->numElem = );
+	}
+}
+
+void t_height() {
+    int a[] = {8, 2, 6, 9, 11, 3, 7};
+	
+    BST_PTR t = bst_create();
+	BST_PTR t2;
+	
+    for(i=0; i<7; i++)
+        bst_insert(t, a[i]);
+
+    t2 = t;
+	
+	while (t2 != NULL) {
+		assert (t2->numElem = );
+	}
+}
+
+
+int t_bst_insert() {
+    int a[] = {8, 2, 6, 9, 11, 3, 7};
+	
+    BST_PTR t = bst_create();
+	
+    for(i=0; i<7; i++)
+        bst_insert(t, a[i]);
+
+    assert(bst_size(t) == 7);
+}
+
 
 int main(){
     int i;
@@ -11,10 +55,7 @@ int main(){
 
     BST_PTR t = bst_create();
 
-    for(i=0; i<7; i++)
-        bst_insert(t, a[i]);
-
-    assert(bst_size(t) == 7);
+    
 
     /* PART 2 */
     

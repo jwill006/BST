@@ -2,9 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 struct bst_node {
     int val;
 	int num_elem;
+	int height;
     struct bst_node *left;
     struct bst_node *right;
 
