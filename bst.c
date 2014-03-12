@@ -251,8 +251,19 @@ void bst_postorder(BST_PTR t){
  * perfectly balanced, given a sorted array of elements a.
  */
 static NODE * from_arr(int *a, int n){
-    /* Code function and replace return statement */
-    return NULL;
+	int m;
+	NODE *root;
+
+   if(n <= 0) return NULL;
+   m = n/2;
+   root = malloc(sizeof(NODE));
+   root->val = a[m];
+   root->left = from_arr(a, m);
+   root->right = from_arr(&(a[m+1]), n-(m+1));
+   
+   if (root->left != NULL) root->numElem++;
+   if (root->right != NULL) root->numElem++;
+   return root;
 }
 
 BST_PTR bst_from_sorted_arr(int *a, int n){
