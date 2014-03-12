@@ -7,6 +7,8 @@ struct bst_node {
     int val;
 	int num_elem;
 	int height;
+	int update;
+	struct bst_node *parent;
     struct bst_node *left;
     struct bst_node *right;
 
@@ -17,6 +19,28 @@ typedef struct bst_node NODE;
 struct bst {
     NODE *root;
 };
+
+/******** AVL Helpers ********/
+
+// Returns 1 if node is the root of a tree.
+static int root(NODE *r) {
+	return (r->parent==NULL ? 1 : 0);
+}
+
+// Return height of node
+static int height(NODE *r) {
+	if (r==NULL) return -1;
+	else return r->height;
+}
+
+// Returns 1 if tree is valid AVL.
+static int avl_check(NODE *r) {
+	int diff = height(t->left) - height(t->right);
+	if (diff>=-1 && diff<=1) return 1;
+	return 0;
+}
+
+
 
 BST_PTR bst_create(){
   BST_PTR t = malloc(sizeof(struct bst));
@@ -156,15 +180,15 @@ int bst_size(BST_PTR t){
     return size(t->root);
 }
 
-static int height(NODE *r){
-    int l_h, r_h;
-
-    if(r==NULL) return -1;
-    l_h = height(r->left);
-    r_h = height(r->right);
-    return 1 + (l_h > r_h ? l_h : r_h);
-
-}
+// static int height(NODE *r){
+//     int l_h, r_h;
+// 
+//     if(r==NULL) return -1;
+//     l_h = height(r->left);
+//     r_h = height(r->right);
+//     return 1 + (l_h > r_h ? l_h : r_h);
+// 
+// }
 int bst_height(BST_PTR t){
     return height(t->root);
 

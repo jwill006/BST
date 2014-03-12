@@ -33,6 +33,15 @@ void t_height() {
 	}
 }
 
+void t_avl() {
+	int a[] = {8, 2, 6, 9, 11, 3, 7};
+	
+	BST_PTR t = bst_create();
+	
+    for(i=0; i<7; i++)
+        bst_insert(t, a[i]);
+}
+
 
 int t_bst_insert() {
     int a[] = {8, 2, 6, 9, 11, 3, 7};
