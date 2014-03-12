@@ -1,13 +1,15 @@
 #include "bst.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 
 struct bst_node {
     int val;
-	int num_elem;
+	int count;
 	int height;
-	int update;
+	int update_count;
+	int update_height;
 	struct bst_node *parent;
     struct bst_node *left;
     struct bst_node *right;
@@ -20,17 +22,72 @@ struct bst {
     NODE *root;
 };
 
-/******** AVL Helpers ********/
+/******** BST Helpers ********/
 
 // Returns 1 if node is the root of a tree.
-static int root(NODE *r) {
+static int is_root(NODE *r) {
+	if (r==NULL) return 1;
 	return (r->parent==NULL ? 1 : 0);
+}
+
+// Returns 1 if empty tree
+static int is_empty(NODE *r) {
+	return r==NULL;
+}
+
+// Returns 1 if node is a leaf
+static int is_leaf(NODE *r) {
+	assert (r!=NULL);
+	return ((r->left==NULL && r->right==NULL) ? 1 : 0);
 }
 
 // Return height of node
 static int height(NODE *r) {
 	if (r==NULL) return -1;
 	else return r->height;
+}
+
+/******** AVL Helpers ********/
+
+// Handles attching node onto a leaf
+static void avl_update_leaf_node(NODE *r) {
+	// int branch = 0;  #TODO refactor for dynamic branch selection
+	r->count++;
+	r->height++;
+	r->update_height = 1;
+	r->update_count = 1;
+}
+
+static void avl_update_inner_node(NODE *r) {
+	if ((r->left != NULL) && (r->left->update_count)) {
+		r->count++;
+		r->update_count = 1;
+		
+		if (r->left->update_height) {
+			r->height++;
+			r->update_height = 1;
+		}
+		
+		// Reset update flags
+		r->left->update_count = 0;
+		r->left->update_height = 0;
+			
+	}
+	
+	if ((r->right != NULL) && (r->right->update_count)) {
+		r->count++;
+		r->update_count = 1;
+		r->right->update_count = 0;
+		
+		if (r->right->update_height) {
+			r->height++;
+			r->update_height = 1;
+		}
+		
+		// Reset update flags
+		r->right->update_count = 0;
+		r->right->update_height = 0;
+	}
 }
 
 // Returns 1 if tree is valid AVL.
@@ -40,6 +97,13 @@ static int avl_check(NODE *r) {
 	return 0;
 }
 
+static void assign_parent(NODE *parent, NODE *child) {
+	if (parent==NULL || child==NULL) return;
+	child->parent = parent;
+	assert(parent->left==child || parent->right==child);
+}
+
+//######### TODO: AVL restructure
 
 
 BST_PTR bst_create(){
@@ -62,10 +126,16 @@ void bst_free(BST_PTR t){
 
 static NODE * insert(NODE *r, int x){
     NODE *leaf;
+	int leaf_check;
+	
     if(r == NULL){
       leaf = malloc(sizeof(NODE));
+	  leaf->parent = NULL;
       leaf->left = NULL;
       leaf->right = NULL;
+	  leaf->height = 0;
+	  leaf->update_count = 0;
+	  leaf->update_height = 0;
       leaf->val = x;
       return leaf;
     }
@@ -73,12 +143,41 @@ static NODE * insert(NODE *r, int x){
     if(r->val == x)
         return r;
     if(x < r->val){
+		leaf_check = is_leaf(r);
         r->left = insert(r->left, x);
-        return r;
+		
+		// Something will be added to tree
+		if (leaf_check) {
+			r->height++;
+			assign_parent(r, r->left);
+			avl_update_leaf_node(r);
+		}
+		
+		else {
+			avl_update_inner_node(r);
+			if (avl_check(r)) return r;
+			else return (avl_cycle(r));
+		}
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
     }
     else {
         r->right = insert(r->right, x);
-        return r;
+		
+		
+		
+		
+		assign_parent(r, r->right);
+		if (avl_check(r)) return r;
+		else return (avl_cycle(r));
     }
 }
 
