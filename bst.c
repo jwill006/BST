@@ -6,9 +6,9 @@
 
 struct bst_node {
     int val;
-	int count;
+	int size;
 	int height;
-	int update_count;
+	int update_size;
 	int update_height;
 	struct bst_node *parent;
     struct bst_node *left;
@@ -30,6 +30,26 @@ static int is_root(NODE *r) {
 	return (r->parent==NULL ? 1 : 0);
 }
 
+static int is_not_root(NODE *r) {
+	return is_root(r)==0;
+}
+
+// Returns 1 if node is a left child
+static int is_left_child(NODE *r) {
+	if (r==NULL) return 0;
+	if (is_not_root(r)) {
+		if (r->parent->left == r) return 1;
+	}
+}
+
+// Returns 1 if node is a right child
+static int is_right_child(NODE *r) {
+	if (r==NULL) return 0;
+	if (is_not_root(r)) {
+		if (r->parent->right == r) return 1;
+	}
+}
+
 // Returns 1 if empty tree
 static int is_empty(NODE *r) {
 	return r==NULL;
@@ -47,60 +67,58 @@ static int height(NODE *r) {
 	else return r->height;
 }
 
-/******** AVL Helpers ********/
-
-// Handles attching node onto a leaf
-static void avl_update_leaf_node(NODE *r) {
-	// int branch = 0;  #TODO refactor for dynamic branch selection
-	r->count++;
-	r->height++;
-	r->update_height = 1;
-	r->update_count = 1;
+static int size(NODE *r) {
+	if (r==NULL) return 0;
+	else return r->size;
 }
 
-static void avl_update_inner_node(NODE *r) {
-	if ((r->left != NULL) && (r->left->update_count)) {
-		r->count++;
-		r->update_count = 1;
-		
-		if (r->left->update_height) {
-			r->height++;
-			r->update_height = 1;
-		}
-		
-		// Reset update flags
-		r->left->update_count = 0;
-		r->left->update_height = 0;
-			
-	}
-	
-	if ((r->right != NULL) && (r->right->update_count)) {
-		r->count++;
-		r->update_count = 1;
-		r->right->update_count = 0;
-		
-		if (r->right->update_height) {
-			r->height++;
-			r->update_height = 1;
-		}
-		
-		// Reset update flags
-		r->right->update_count = 0;
-		r->right->update_height = 0;
-	}
+/******** AVL Helpers ********/
+
+
+// Recalculates the height & size for node r
+static void avl_update_node(NODE *r) {
+	if (r==NULL) return;
+	r->size = 1 + size(r-left)  + size(r->right);
+	r->height = 1 + ( (height(r->left) > height(r->right)) ? height(r->left) : height(r->right) );
+}
+
+// Handles promoting a leaf node to an inner node
+static void avl_promote_leaf_to_parent(NODE *parent, NODE *leaf) {
+	leaf->parent = parent;
 }
 
 // Returns 1 if tree is valid AVL.
-static int avl_check(NODE *r) {
+static int avl_validation(NODE *r) {
 	int diff = height(t->left) - height(t->right);
 	if (diff>=-1 && diff<=1) return 1;
 	return 0;
 }
 
-static void assign_parent(NODE *parent, NODE *child) {
+static void avl_assign_parent(NODE *parent, NODE *child) {
 	if (parent==NULL || child==NULL) return;
 	child->parent = parent;
-	assert(parent->left==child || parent->right==child);
+}
+
+// Cycle AVL tree left
+static NODE *avl_cycle_left(NODE *r) {
+	NODE *a = r->left;
+	NODE *b = r;
+	NODE *c = (a!=NULL ? a->right : NULL);
+	NODE *p = r->parent;
+	
+	if (is_not_root(b)) {
+		if (is_left_child(b)) p->left = a;
+		else p->right = a;
+		a->parent = p;
+		b->left = c;
+		if (c!=NULL) c->parent = b;
+		a->right = b;
+		b->parent = a;
+	}
+	
+	avl_update_node(b);
+	avl_update_node(a);
+	return a;
 }
 
 //######### TODO: AVL restructure
@@ -134,7 +152,8 @@ static NODE * insert(NODE *r, int x){
       leaf->left = NULL;
       leaf->right = NULL;
 	  leaf->height = 0;
-	  leaf->update_count = 0;
+	  leaf->size = 1;
+	  leaf->update_size = 0;
 	  leaf->update_height = 0;
       leaf->val = x;
       return leaf;
@@ -143,41 +162,36 @@ static NODE * insert(NODE *r, int x){
     if(r->val == x)
         return r;
     if(x < r->val){
-		leaf_check = is_leaf(r);
-        r->left = insert(r->left, x);
-		
-		// Something will be added to tree
-		if (leaf_check) {
-			r->height++;
-			assign_parent(r, r->left);
-			avl_update_leaf_node(r);
+		if (is_leaf(r)) {
+			r->left = insert(r->left, x);
+			assert(r->left != NULL);
+			avl_assign_parent(r, r->left);
+			avl_update_node(r);
+			return r;
 		}
 		
 		else {
-			avl_update_inner_node(r);
-			if (avl_check(r)) return r;
-			else return (avl_cycle(r));
+			r->left = insert(r->left, x);
+			avl_update_node(r);
+			if (avl_validation(r)) return r;
+			else return avl_cycle_left(r);
 		}
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
     }
     else {
-        r->right = insert(r->right, x);
+		if (is_leaf(r)) {
+			r->right = insert(r->right, x);
+			assert(r->right != NULL);
+			avl_assign_parent(r, r->right);
+			avl_update_node(r);
+			return r;
+		}
 		
-		
-		
-		
-		assign_parent(r, r->right);
-		if (avl_check(r)) return r;
-		else return (avl_cycle(r));
+		else {
+			r->right = insert(r->right, x);
+			avl_update_node(r);
+			if (avl_validation(r)) return r;
+			else return avl_cycle_right(r);
+		}
     }
 }
 
@@ -269,11 +283,7 @@ int bst_remove(BST_PTR t, int x){
     t->root = remove_r(t->root, x, &success);
     return success;
 }
-static int size(NODE *r){
 
-    if(r==NULL) return 0;
-    return size(r->left) + size(r->right) + 1;
-}
 int bst_size(BST_PTR t){
 
     return size(t->root);
@@ -288,6 +298,7 @@ int bst_size(BST_PTR t){
 //     return 1 + (l_h > r_h ? l_h : r_h);
 // 
 // }
+
 int bst_height(BST_PTR t){
     return height(t->root);
 
