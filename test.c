@@ -2,6 +2,7 @@
 #include "bst.h"
 
 void t_num_elem() {
+	int i;
     int a[] = {8, 2, 6, 9, 11, 3, 7};
 	
     BST_PTR t = bst_create();
@@ -9,15 +10,10 @@ void t_num_elem() {
 	
     for(i=0; i<7; i++)
         bst_insert(t, a[i]);
-
-    t2 = t;
-	
-	while (t2 != NULL) {
-		assert (t2->numElem = );
-	}
 }
 
 void t_height() {
+	int i;
     int a[] = {8, 2, 6, 9, 11, 3, 7};
 	
     BST_PTR t = bst_create();
@@ -25,25 +21,27 @@ void t_height() {
 	
     for(i=0; i<7; i++)
         bst_insert(t, a[i]);
-
-    t2 = t;
 	
-	while (t2 != NULL) {
-		assert (t2->numElem = );
-	}
 }
 
 void t_avl() {
-	int a[] = {8, 2, 6, 9, 11, 3, 7};
+	int i;
+	int a[] = {8, 2, 6, 9, 11, 3, 77, 66, 22, 0, -1, 33, 29};
 	
 	BST_PTR t = bst_create();
 	
-    for(i=0; i<7; i++)
+    for(i=0; i<13; i++)
         bst_insert(t, a[i]);
+	
+	bst_inorder(t);
+	bst_preorder(t);
+	printf("Height of root: %d\n", bst_height(t));
+	printf("Size of tree: %d\n", bst_size(t));
 }
 
 
 int t_bst_insert() {
+	int i;
     int a[] = {8, 2, 6, 9, 11, 3, 7};
 	
     BST_PTR t = bst_create();
@@ -64,15 +62,16 @@ int main(){
 
     BST_PTR t = bst_create();
 
+	t_avl();
     
 
     /* PART 2 */
     
-    bst_inorder(t);
-
-    bst_preorder(t);
-
-    bst_postorder(t);
+    // bst_inorder(t);
+    // 
+    // bst_preorder(t);
+    // 
+    // bst_postorder(t);
 
     bst_free(t);
     
