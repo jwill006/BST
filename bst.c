@@ -97,59 +97,6 @@ static int avl_validation(NODE *r) {
 }
 
 // Cycle AVL tree left
-static NODE *avl_cycle_left2(NODE *r) {
-	struct bst tmp;
-	tmp.root = r;
-	printf ("\npre-cycle left\n");
-	bst_preorder(&tmp);
-	
-	NODE *a = r->left;
-	NODE *b = r;
-	NODE *c = a->left;
-	NODE *d = a->right;
-	NODE *p = r->parent;
-	
-	// Left-Left case
-	if (height(a->left) > height(a->right)) {
-		if (is_not_root(b)) {
-			if (is_left_child(b)) p->left = a;
-			else p->right = a;
-		}
-	
-		a->parent = p;
-		b->left = d;
-		a->right = b;
-		b->parent = a;
-		b->right = d;
-		if (!is_empty_tree(d)) d->parent = b;
-	}
-	
-	// Left-Right case
-	else {
-		if (is_not_root(b)) {
-			if (is_left_child(b)) p->left = d;
-			else p->right = d;
-		}
-	
-		d->parent = p;
-		b->left = d->right;
-		d->right = b;
-		a->parent = d;
-		d->left = a;
-		
-		a->right = NULL;
-		b->parent = d;
-	}
-	
-	
-	
-	avl_update_node(b);
-	avl_update_node(a);
-	printf ("\npost-cycle left\n");
-	bst_preorder(&tmp);
-	return a;
-}
-
 static NODE *avl_cycle_left(NODE *r) {
 	NODE *a = r->left;
 	NODE *b = r;
@@ -167,7 +114,6 @@ static NODE *avl_cycle_left(NODE *r) {
 		a->parent = p;
 		a->left = c;
 		a->right = b;
-		
 		b->left = NULL;
 		b->parent = a;
 		c->parent = a;
@@ -186,14 +132,11 @@ static NODE *avl_cycle_left(NODE *r) {
 		}
 		
 		d->parent = p;
+		a->right = d->left;
 		d->left = a;
 		d->right = b;
-		
 		a->parent = d;
 		b->parent = d;
-		
-		a->right = NULL;
-		b->right = NULL;
 		b->left = NULL;
 		avl_update_node(a);
 		avl_update_node(b);
@@ -217,14 +160,13 @@ static NODE *avl_cycle_right(NODE *r) {
 			if (is_right_child(b)) p->right = a;
 			else p->left = a;
 		}
-	
+
 		a->parent = p;
+		b->right = a->left;
 		a->left = b;
-		a->right = d;
-		
+		a->right = d;		
 		b->parent = a;
 		d->parent = a;
-		b->right = NULL;
 		avl_update_node(b);
 		avl_update_node(d);
 		avl_update_node(a);
@@ -243,7 +185,6 @@ static NODE *avl_cycle_right(NODE *r) {
 		a->left = c->right;
 		c->left = b;
 		c->right = a;
-		
 		a->parent = c;
 		b->parent = c;
 		b->right = NULL;
