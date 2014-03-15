@@ -117,6 +117,9 @@ static NODE* avl_cycle_tree_right(NODE *r) {
 	
 	a->left = d;
 	b->right = a;
+	
+	if (is_not_empty_tree(d)) d->parent = a;
+	if (is_not_empty_tree(a)) a->parent = b;
 	avl_update_node(d);
 	avl_update_node(a);
 	avl_update_node(b);
@@ -131,6 +134,8 @@ static NODE* avl_cycle_tree_left(NODE *r) {
 	
 	a->right = c;
 	b->left = a;
+	if (is_not_empty_tree(c)) c->parent = a;
+	if (is_not_empty_tree(a)) a->parent = b;
 	avl_update_node(c);
 	avl_update_node(a);
 	avl_update_node(b);
@@ -234,12 +239,14 @@ static NODE * insert(NODE *r, int x){
         return r;
     if(x < r->val){
 		r->left = avl_validation(insert(r->left, x),x);
+		if (is_not_empty_tree(r->left)) r->left->parent = r;
 		avl_update_node(r);
 		return r;
     }
 	
     else {
 		r->right = avl_validation(insert(r->right,x),x);
+		if (is_not_empty_tree(r->right)) r->right->parent = r;
 		avl_update_node(r);
 		return r;
     }

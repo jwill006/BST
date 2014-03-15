@@ -45,7 +45,7 @@ void t_avl() {
 	for(i=127; i>63; i--)
 		bst_insert(t,i);
 	
-	// t_avl_parent(t);
+	t_avl_parent(t);
 	
 	bst_inorder(t);
 	
