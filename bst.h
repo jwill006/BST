@@ -45,3 +45,5 @@ extern int bst_get_nearest(BST_PTR t, int x);
 extern int bst_num_geq(BST_PTR t, int x);
 
 extern int bst_num_leq(BST_PTR t, int x);
+
+extern int t_avl_parent(BST_PTR t);

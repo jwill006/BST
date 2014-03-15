@@ -8,8 +8,6 @@ struct bst_node {
     int val;
 	int size;
 	int height;
-	int update_size;
-	int update_height;
 	struct bst_node *parent;
     struct bst_node *left;
     struct bst_node *right;
@@ -22,11 +20,22 @@ struct bst {
     NODE *root;
 };
 
+static void preorder(NODE *, int);
+static NODE* avl_cycle_tree_right(NODE *);
+static NODE* avl_cycle_tree_left(NODE *);
+static void inorder(NODE *);
+
+/*****************************/
 /******** BST Helpers ********/
 
 // Returns 1 if empty tree
 static int is_empty_tree(NODE *r) {
 	return r==NULL;
+}
+
+// Returns 1 if not empty tree
+static int is_not_empty_tree(NODE *r) {
+	return is_empty_tree(r)==0;
 }
 
 // Returns 1 if node is the root of a tree.
@@ -54,27 +63,31 @@ static int is_right_child(NODE *r) {
 	if (is_not_root(r)) {
 		if (r->parent->right == r) return 1;
 	}
+	return 0;
 }
 
 // Returns 1 if node is a leaf
 static int is_leaf(NODE *r) {
-	assert (!is_empty_tree(r));
+	assert (is_not_empty_tree(r));
 	return ((r->left==NULL && r->right==NULL) ? 1 : 0);
 }
 
-// Return height of node
+// Return height of sub-tree with root r 
+//  NOTE: the empty tree has height -1
 static int height(NODE *r) {
 	if (is_empty_tree(r)) return -1;
 	else return r->height;
 }
 
+// Returns number of nodes in sub-tree with root r
 static int size(NODE *r) {
 	if (is_empty_tree(r)) return 0;
 	else return r->size;
 }
 
-/******** AVL Helpers ********/
 
+/*****************************/
+/******** AVL Helpers ********/
 
 // Recalculates the height & size for node r
 static void avl_update_node(NODE *r) {
@@ -83,143 +96,93 @@ static void avl_update_node(NODE *r) {
 	r->height = 1 + ( (height(r->left) > height(r->right)) ? height(r->left) : height(r->right) );
 }
 
+static int avl_balance_factor(NODE *r) {
+	if (is_empty_tree(r)) return 0;
+	return height(r->left) - height(r->right);
+}
+
 // Handles promoting a leaf node to an inner node
 static void avl_promote_leaf_to_parent(NODE *parent, NODE *leaf) {
 	if (is_empty_tree(parent) || is_empty_tree(leaf)) return;
 	leaf->parent = parent;
 }
 
-// Returns 1 if tree is valid AVL.
-static int avl_validation(NODE *r) {
-	int diff = height(r->left) - height(r->right);
-	if (diff>=-1 && diff<=1) return 1;
+
+
+// Cycle AVL tree to the right
+static NODE* avl_cycle_tree_right(NODE *r) {
+	NODE *a = r;
+	NODE *b = r->left;
+	NODE *d = b->right;
+	
+	a->left = d;
+	b->right = a;
+	avl_update_node(d);
+	avl_update_node(a);
+	avl_update_node(b);
+	return b;
+}
+
+// Cycle AVL tree to the left
+static NODE* avl_cycle_tree_left(NODE *r) {
+	NODE *a = r;
+	NODE *b = r->right;
+	NODE *c = b->left;
+	
+	a->right = c;
+	b->left = a;
+	avl_update_node(c);
+	avl_update_node(a);
+	avl_update_node(b);
+	return b;
+}
+
+// Cycle switch
+static NODE* avl_cycle(NODE *r, int x) {
+	int balance = avl_balance_factor(r);
+			
+	// Left Left Case
+    if (balance > 1 && x < r->left->val) {
+		return avl_cycle_tree_right(r);
+    }
+	
+    // Left Right Case
+    if (balance > 1 && x > r->left->val) {
+		r->left = avl_cycle_tree_left(r->left);
+		return avl_cycle_tree_right(r);
+    }
+
+    // Right Right Case
+    if (balance < -1 && x > r->right->val) {
+        return avl_cycle_tree_left(r);
+	}
+
+    // Right Left Case
+    if (balance < -1 && x < r->right->val)
+    {
+		r->right = avl_cycle_tree_right(r->right);
+		return avl_cycle_tree_left(r);
+    }
+}
+
+// Flag is set to 1 if sub-tree with root r is NOT AVL
+static int avl_validation_flag(NODE *r) {
+	int balance = avl_balance_factor(r);	
+	if (balance>1 || balance<-1) return 1;
 	return 0;
 }
 
-// Cycle AVL tree left
-static NODE *avl_cycle_left(NODE *r) {
-	NODE *a = r->left;
-	NODE *b = r;
-	NODE *c = a->left;
-	NODE *d = a->right;
-	NODE *p = r->parent;
-	
-	// Left-Left case
-	if (height(a->left) > height(a->right)) {
-		if (is_not_root(b)) {
-			if (is_left_child(b)) p->left = a;
-			else p->right = a;
-		}
-		
-		a->parent = p;
-		a->left = c;
-		a->right = b;
-		b->left = NULL;
-		b->parent = a;
-		c->parent = a;
-		avl_update_node(b);
-		avl_update_node(c);
-		avl_update_node(a);
-		avl_update_node(p);
-		return a;
+// Validates if subtree with root r and additional node with val x is AVL
+//  Returns the subtree if AVL, else cycles and returns the resulting sub-tree
+static NODE * avl_validation(NODE *r, int x) {
+	if (avl_validation_flag(r)) {
+		printf("AVL violation (%d) Insert (%d)\n", r->val, x);
+		preorder(r,0);
+		return avl_cycle(r,x);
 	}
 	
-	// Left-Right case
-	else {
-		if (is_not_root(b)) {
-			if (is_left_child(b)) p->left = d;
-			else p->right = d;
-		}
-		
-		d->parent = p;
-		a->right = d->left;
-		d->left = a;
-		d->right = b;
-		a->parent = d;
-		b->parent = d;
-		b->left = NULL;
-		avl_update_node(a);
-		avl_update_node(b);
-		avl_update_node(d);
-		avl_update_node(p);
-		return d;
-	}
+	return r;
 }
-
-// Cycle AVL tree right
-static NODE *avl_cycle_right(NODE *r) {
-	NODE *a = r->right;
-	NODE *b = r;
-	NODE *c = a->left;
-	NODE *d = a->right;
-	NODE *p = r->parent;
-	
-	// Right-Right case
-	if (height(a->right) > height(a->left)) {
-		if (is_not_root(b)) {
-			if (is_right_child(b)) p->right = a;
-			else p->left = a;
-		}
-
-		a->parent = p;
-		b->right = a->left;
-		a->left = b;
-		a->right = d;		
-		b->parent = a;
-		d->parent = a;
-		avl_update_node(b);
-		avl_update_node(d);
-		avl_update_node(a);
-		avl_update_node(p);
-		return a;
-	}
-	
-	// Right-Left case
-	else {
-		if (is_not_root(b)) {
-			if (is_right_child(b)) p->right = c;
-			else p->left = c;
-		}
-		
-		c->parent = p;
-		a->left = c->right;
-		c->left = b;
-		c->right = a;
-		a->parent = c;
-		b->parent = c;
-		b->right = NULL;
-		avl_update_node(b);
-		avl_update_node(a);
-		avl_update_node(c);
-		avl_update_node(p);
-	}
-	return c;
-}
-
-static NODE *avl_cycle(NODE *r) {
-	NODE *rt;
-	struct bst tmp;
-	tmp.root = r;
-	if (height(r->left) > height(r->right)) {
-		printf ("\npre-cycle left\n");
-		bst_preorder(&tmp);
-		tmp.root = avl_cycle_left(r);
-		printf ("\npost-cycle left\n");
-		bst_preorder(&tmp);
-	}
-	else {
-		printf ("\npre-cycle right\n");
-		bst_preorder(&tmp);
-		tmp.root = avl_cycle_right(r);
-		printf ("\npost-cycle right\n");
-		bst_preorder(&tmp);
-	}
-	
-	return tmp.root;
-}
-
-//######### TODO: AVL restructure
-
 
 BST_PTR bst_create(){
   BST_PTR t = malloc(sizeof(struct bst));
@@ -239,9 +202,22 @@ void bst_free(BST_PTR t){
     free(t);
 }
 
+static void t_avl_parent_helper(NODE* r) {
+	if (is_empty_tree(r)) return;
+	printf("TESTING PARENTS N(%d) P(%d) :   PL(%d)  PR(%d)\n", r->val, r->parent->val, (is_not_empty_tree(r->parent->left) ? r->parent->left->val : 0), (is_not_empty_tree(r->parent->right) ? r->parent->right->val : 0) );
+	assert(r->parent->left==r || r->parent->right==r);
+	t_avl_parent_helper(r->left);
+	t_avl_parent_helper(r->right);
+}
+
+int t_avl_parent(BST_PTR t) {
+	t_avl_parent_helper(t->root->left);
+	t_avl_parent_helper(t->root->right);
+	return 1;
+}
+
 static NODE * insert(NODE *r, int x){
     NODE *leaf;
-	int leaf_check;
 	
     if(r == NULL){
       leaf = malloc(sizeof(NODE));
@@ -250,8 +226,6 @@ static NODE * insert(NODE *r, int x){
       leaf->right = NULL;
 	  leaf->height = 0;
 	  leaf->size = 1;
-	  leaf->update_size = 0;
-	  leaf->update_height = 0;
       leaf->val = x;
       return leaf;
     }
@@ -259,35 +233,15 @@ static NODE * insert(NODE *r, int x){
     if(r->val == x)
         return r;
     if(x < r->val){
-		if (is_leaf(r)) {
-			r->left = insert(r->left, x);
-			avl_promote_leaf_to_parent(r, r->left);
-			avl_update_node(r);
-			return r;
-		}
-		
-		else {
-			r->left = insert(r->left, x);
-			avl_update_node(r);
-			if (avl_validation(r)) return r;
-			return avl_cycle(r);
-		}
+		r->left = avl_validation(insert(r->left, x),x);
+		avl_update_node(r);
+		return r;
     }
+	
     else {
-		if (is_leaf(r)) {
-			r->right = insert(r->right, x);
-			avl_promote_leaf_to_parent(r, r->right);
-			avl_update_node(r);
-			return r;
-		}
-		
-		else {
-			r->right = insert(r->right, x);
-			avl_update_node(r);
-			// return r;
-			if (avl_validation(r)) return r;
-			return avl_cycle(r);
-		}
+		r->right = avl_validation(insert(r->right,x),x);
+		avl_update_node(r);
+		return r;
     }
 }
 
@@ -385,15 +339,6 @@ int bst_size(BST_PTR t){
     return size(t->root);
 }
 
-// static int height(NODE *r){
-//     int l_h, r_h;
-// 
-//     if(r==NULL) return -1;
-//     l_h = height(r->left);
-//     r_h = height(r->right);
-//     return 1 + (l_h > r_h ? l_h : r_h);
-// 
-// }
 
 int bst_height(BST_PTR t){
     return height(t->root);

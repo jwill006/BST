@@ -24,16 +24,34 @@ void t_height() {
 	
 }
 
+
 void t_avl() {
 	int i;
 	
 	BST_PTR t = bst_create();
 	
-    for(i=0; i<1024; i++)
-        bst_insert(t, i);
+    // for(i=0; i<1024; i++)
+    //     bst_insert(t, i);
+    	
+	    for(i=63; i>=32; i--)
+	        bst_insert(t, i);
+	
+	    for(i=0; i<32; i++)
+	        bst_insert(t, i);
+	
+	for(i=128; i<256; i++)
+		bst_insert(t,i);
+	
+	for(i=127; i>63; i--)
+		bst_insert(t,i);
+	
+	// t_avl_parent(t);
 	
 	bst_inorder(t);
-	bst_preorder(t);
+	
+	// for(i=bst_height(t); i>=0; i--, t->root=t->root->left)
+	// 	assert(t->root->height==i);
+	
 	printf("Height of root: %d\n", bst_height(t));
 	printf("Size of tree: %d\n", bst_size(t));
 }
