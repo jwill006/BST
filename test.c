@@ -24,33 +24,48 @@ void t_height() {
 	
 }
 
+int *gen_random_arr(int size) {
+	int *elements = malloc(sizeof(int)*size);
+
+	// inizialize
+	for (int i = 0; i < size; ++i)
+	  elements[i] = i;
+
+	for (int i = size - 1; i > 0; --i) {
+	  // generate random index
+	  int w = rand()%i;
+	  // swap items
+	  int t = elements[i];
+	  elements[i] = elements[w];
+	  elements[w] = t;
+	}
+	
+	return elements;
+}
+
 
 void t_avl() {
 	int i;
-	
+	int size = 1024;
 	BST_PTR t = bst_create();
+	int *a = gen_random_arr(size);
 	
-    // for(i=0; i<1024; i++)
-    //     bst_insert(t, i);
-    	
-	    for(i=63; i>=32; i--)
-	        bst_insert(t, i);
-	
-	    for(i=0; i<32; i++)
-	        bst_insert(t, i);
-	
-	for(i=128; i<256; i++)
-		bst_insert(t,i);
-	
-	for(i=127; i>63; i--)
-		bst_insert(t,i);
-	
-	t_avl_parent(t);
+    for(i=0; i<size; i++)
+        bst_insert(t, i);
 	
 	bst_inorder(t);
+	    	
 	
-	// for(i=bst_height(t); i>=0; i--, t->root=t->root->left)
-	// 	assert(t->root->height==i);
+	
+	printf("Height of root: %d\n", bst_height(t));
+	printf("Size of tree: %d\n", bst_size(t));
+	
+	for(i=0; i<1023; i++) {
+		bst_remove(t,a[i]);
+		printf ("Delete %d\n", a[i]);
+	}
+	
+	bst_inorder(t);
 	
 	printf("Height of root: %d\n", bst_height(t));
 	printf("Size of tree: %d\n", bst_size(t));

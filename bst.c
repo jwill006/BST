@@ -8,7 +8,7 @@ struct bst_node {
     int val;
 	int size;
 	int height;
-	struct bst_node *parent;
+	int root;
     struct bst_node *left;
     struct bst_node *right;
 
@@ -19,11 +19,6 @@ typedef struct bst_node NODE;
 struct bst {
     NODE *root;
 };
-
-static void preorder(NODE *, int);
-static NODE* avl_cycle_tree_right(NODE *);
-static NODE* avl_cycle_tree_left(NODE *);
-static void inorder(NODE *);
 
 /*****************************/
 /******** BST Helpers ********/
@@ -41,29 +36,12 @@ static int is_not_empty_tree(NODE *r) {
 // Returns 1 if node is the root of a tree.
 static int is_root(NODE *r) {
 	if (is_empty_tree(r)) return 0;
-	return (r->parent==NULL ? 1 : 0);
+	return r->root;
 }
 
 // Returns 1 if node is not the root of a tree.
 static int is_not_root(NODE *r) {
 	return is_root(r)==0;
-}
-
-// Returns 1 if node is a left child
-static int is_left_child(NODE *r) {
-	if (is_empty_tree(r)) return 0;
-	if (is_not_root(r)) {
-		if (r->parent->left == r) return 1;
-	}
-}
-
-// Returns 1 if node is a right child
-static int is_right_child(NODE *r) {
-	if (is_empty_tree(r)) return 0;
-	if (is_not_root(r)) {
-		if (r->parent->right == r) return 1;
-	}
-	return 0;
 }
 
 // Returns 1 if node is a leaf
@@ -101,49 +79,36 @@ static int avl_balance_factor(NODE *r) {
 	return height(r->left) - height(r->right);
 }
 
-// Handles promoting a leaf node to an inner node
-static void avl_promote_leaf_to_parent(NODE *parent, NODE *leaf) {
-	if (is_empty_tree(parent) || is_empty_tree(leaf)) return;
-	leaf->parent = parent;
-}
-
-
-
-// Cycle AVL tree to the right
-static NODE* avl_cycle_tree_right(NODE *r) {
-	NODE *a = r;
-	NODE *b = r->left;
-	NODE *d = b->right;
-	
-	a->left = d;
-	b->right = a;
-	
-	if (is_not_empty_tree(d)) d->parent = a;
-	if (is_not_empty_tree(a)) a->parent = b;
-	avl_update_node(d);
-	avl_update_node(a);
-	avl_update_node(b);
-	return b;
-}
-
 // Cycle AVL tree to the left
 static NODE* avl_cycle_tree_left(NODE *r) {
 	NODE *a = r;
 	NODE *b = r->right;
-	NODE *c = b->left;
+	NODE *c = (is_not_empty_tree(b) ? b->left : NULL);
 	
 	a->right = c;
-	b->left = a;
-	if (is_not_empty_tree(c)) c->parent = a;
-	if (is_not_empty_tree(a)) a->parent = b;
+	if (is_not_empty_tree(b)) b->left = a;
 	avl_update_node(c);
 	avl_update_node(a);
 	avl_update_node(b);
 	return b;
 }
 
-// Cycle switch
-static NODE* avl_cycle(NODE *r, int x) {
+// Cycle AVL tree to the right
+static NODE* avl_cycle_tree_right(NODE *r) {
+	NODE *a = r;
+	NODE *b = r->left;
+	NODE *d = (is_not_empty_tree(b) ? b->right : NULL);
+	
+	a->left = d;
+	if (is_not_empty_tree(b)) b->right = a;
+	avl_update_node(d);
+	avl_update_node(a);
+	avl_update_node(b);
+	return b;
+}
+
+// Cycle switch for insertion
+static NODE* avl_insert_cycle(NODE *r, int x) {
 	int balance = avl_balance_factor(r);
 			
 	// Left Left Case
@@ -170,6 +135,38 @@ static NODE* avl_cycle(NODE *r, int x) {
     }
 }
 
+// Cycle switch for deletion
+static NODE* avl_delete_cycle(NODE *r) {
+	int balance = avl_balance_factor(r);
+	int l_balance = avl_balance_factor(r->left);
+	int r_balance = avl_balance_factor(r->right);
+			
+	// Left Left Case
+    if (balance > 1 && l_balance >= 0) {
+		return avl_cycle_tree_right(r);
+    }
+	
+    // Left Right Case
+    if (balance > 1 && l_balance < 0) {
+		r->left = avl_cycle_tree_left(r->left);
+		avl_update_node(r);
+		return avl_cycle_tree_right(r);
+		
+    }
+
+    // Right Right Case
+    if (balance < -1 && r_balance <= 0) {
+        return avl_cycle_tree_left(r);
+	}
+
+    // Right Left Case
+    if (balance < -1 && r_balance > 0)
+    {
+		r->right = avl_cycle_tree_right(r->right);
+		return avl_cycle_tree_left(r);
+    }
+}
+
 // Flag is set to 1 if sub-tree with root r is NOT AVL
 static int avl_validation_flag(NODE *r) {
 	int balance = avl_balance_factor(r);	
@@ -179,11 +176,11 @@ static int avl_validation_flag(NODE *r) {
 
 // Validates if subtree with root r and additional node with val x is AVL
 //  Returns the subtree if AVL, else cycles and returns the resulting sub-tree
-static NODE * avl_validation(NODE *r, int x) {
+static NODE * avl_validation(NODE *r, int x, int insert) {
+	avl_update_node(r);
 	if (avl_validation_flag(r)) {
-		printf("AVL violation (%d) Insert (%d)\n", r->val, x);
-		preorder(r,0);
-		return avl_cycle(r,x);
+		if (insert) return avl_insert_cycle(r,x);
+		return avl_delete_cycle(r);
 	}
 	
 	return r;
@@ -207,26 +204,12 @@ void bst_free(BST_PTR t){
     free(t);
 }
 
-static void t_avl_parent_helper(NODE* r) {
-	if (is_empty_tree(r)) return;
-	printf("TESTING PARENTS N(%d) P(%d) :   PL(%d)  PR(%d)\n", r->val, r->parent->val, (is_not_empty_tree(r->parent->left) ? r->parent->left->val : 0), (is_not_empty_tree(r->parent->right) ? r->parent->right->val : 0) );
-	assert(r->parent->left==r || r->parent->right==r);
-	t_avl_parent_helper(r->left);
-	t_avl_parent_helper(r->right);
-}
-
-int t_avl_parent(BST_PTR t) {
-	t_avl_parent_helper(t->root->left);
-	t_avl_parent_helper(t->root->right);
-	return 1;
-}
-
 static NODE * insert(NODE *r, int x){
     NODE *leaf;
 	
     if(r == NULL){
       leaf = malloc(sizeof(NODE));
-	  leaf->parent = NULL;
+	  leaf->root = 1;
       leaf->left = NULL;
       leaf->right = NULL;
 	  leaf->height = 0;
@@ -238,18 +221,15 @@ static NODE * insert(NODE *r, int x){
     if(r->val == x)
         return r;
     if(x < r->val){
-		r->left = avl_validation(insert(r->left, x),x);
-		if (is_not_empty_tree(r->left)) r->left->parent = r;
-		avl_update_node(r);
-		return r;
+		r->left = avl_validation(insert(r->left,x),x,1);
+		if(is_not_empty_tree(r->left) && r->left->root) r->left->root = 0;
     }
 	
     else {
-		r->right = avl_validation(insert(r->right,x),x);
-		if (is_not_empty_tree(r->right)) r->right->parent = r;
-		avl_update_node(r);
-		return r;
+		r->right = avl_validation(insert(r->right,x),x,1);
+		if(is_not_empty_tree(r->right) && r->right->root) r->right->root = 0;
     }
+	return avl_validation(r,x,1);
 }
 
 // how about an iterative version?
@@ -280,58 +260,68 @@ int bst_contains(BST_PTR t, int x){
     return 0;  
 }
 
-static int min_h(NODE *r){
+static NODE * min_h(NODE *r){
   if(r==NULL)
-    return -1; // should never happen!
+    return NULL; // should never happen!
   while(r->left != NULL)
       r = r->left;
-  return r->val;
+  return r;
 }
 
-static int max_h(NODE *r){
+static NODE * max_h(NODE *r){
   if(r==NULL)
-    return -1; // should never happen!
+    return NULL; // should never happen!
   while(r->right != NULL)
       r = r->right;
-  return r->val;
+  return r;
 }
 
 static NODE *remove_r(NODE *r, int x, int *success){
-NODE   *tmp;
-int sanity;
+	NODE *tmp;
+	
+	if (is_empty_tree(r))
+	        return r;
+ 
+    // Target node is in left sub-tree
+    if ( x < r->val )
+        r->left = avl_validation(remove_r(r->left, x, success),x,0);
 
-  if(r==NULL){
-    *success = 0;
-    return NULL;
-  }
-  if(r->val == x){
-    *success = 1;
+    // Target node is in right sub-tree
+    else if( x > r->val )
+        r->right = avl_validation(remove_r(r->right, x, success),x,0);
 
-    if(r->left == NULL){
-        tmp = r->right;
-        free(r);
-        return tmp;
-    }
-    if(r->right == NULL){
-        tmp = r->left;
-        free(r);
-        return tmp;
-    }
-    // if we get here, r has two children
-    r->val = min_h(r->right);
-    r->right = remove_r(r->right, r->val, &sanity);
-    if(!sanity)
-        printf("ERROR:  remove() failed to delete promoted value?\n");
-    return r;
-  }
-  if(x < r->val){
-    r->left = remove_r(r->left, x, success);
-  }
-  else {
-    r->right = remove_r(r->right, x, success);
-  }
-  return r;
+    // Found node with val x
+    else
+    {
+        // node has 0 or 1 child
+        if( (is_empty_tree(r->left)) || (is_empty_tree(r->right)) )
+        {
+            tmp = (is_not_empty_tree(r->left) ? r->left : r->right);
 
+            // No children
+            if(is_empty_tree(tmp))
+            {
+                tmp = r;
+                r = NULL;
+            }
+			
+			// One child
+            else {
+				*r = *tmp;
+			}
+            free(tmp);
+        }
+		
+		// node has 2 children
+        else
+        {
+            // Copy the node with the smallest val from right sub-tree and delete it
+            tmp = min_h(r->right);
+            r->val = tmp->val;
+            r->right = avl_validation(remove_r(r->right, tmp->val, success), tmp->val, 0);
+        }
+    }	
+	return avl_validation(r,x,0);
 }
 
 
@@ -353,11 +343,11 @@ int bst_height(BST_PTR t){
 }
 
 int bst_min(BST_PTR t){
-    return min_h(t->root);
+    return min_h(t->root)->val;
 }
 
 int bst_max(BST_PTR t){
-    return max_h(t->root);
+    return max_h(t->root)->val;
 }
 
 static void indent(int m){
