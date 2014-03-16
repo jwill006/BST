@@ -361,7 +361,6 @@ static void inorder(NODE *r){
   inorder(r->left);
   printf("[%d]\n", r->val);
   inorder(r->right);
-
 }
 void bst_inorder(BST_PTR t){
 
@@ -432,6 +431,7 @@ static NODE * from_arr(int *a, int n){
    root->val = a[m];
    root->left = from_arr(a, m);
    root->right = from_arr(&(a[m+1]), n-(m+1));
+   avl_update_node(root);
    return root;
 }
 
@@ -442,4 +442,20 @@ BST_PTR bst_from_sorted_arr(int *a, int n){
   t->root = from_arr(a, n);
 
   return t;
+}
+
+//
+static void inorder_val(NODE *r, int *a, int *pos){
+  if(r==NULL) return;
+  inorder_val(r->left, a, pos);
+  a[*pos] = r->val;
+  (*pos)++;
+  inorder_val(r->right, a, pos);
+}
+
+int* bst_to_array(BST_PTR t) {
+	int *result = malloc(sizeof(int) * t->root->size);
+	int pos = 0;
+	inorder_val(t->root, result, &pos);
+	return result;
 }

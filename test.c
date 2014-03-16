@@ -10,6 +10,8 @@ void t_num_elem() {
 	
     for(i=0; i<7; i++)
         bst_insert(t, a[i]);
+	
+	bst_free(t);
 }
 
 void t_height() {
@@ -22,16 +24,19 @@ void t_height() {
     for(i=0; i<7; i++)
         bst_insert(t, a[i]);
 	
+	bst_free(t);
+	
 }
 
 int *gen_random_arr(int size) {
 	int *elements = malloc(sizeof(int)*size);
+	int i;
 
 	// inizialize
-	for (int i = 0; i < size; ++i)
+	for (i = 0; i < size; ++i)
 	  elements[i] = i;
 
-	for (int i = size - 1; i > 0; --i) {
+	for (i = size - 1; i > 0; --i) {
 	  // generate random index
 	  int w = rand()%i;
 	  // swap items
@@ -69,6 +74,8 @@ void t_avl() {
 	
 	printf("Height of root: %d\n", bst_height(t));
 	printf("Size of tree: %d\n", bst_size(t));
+	free(a);
+	bst_free(t);
 }
 
 
@@ -82,6 +89,7 @@ int t_bst_insert() {
         bst_insert(t, a[i]);
 
     assert(bst_size(t) == 7);
+	bst_free(t);
 }
 
 
@@ -112,14 +120,24 @@ int main(){
     int sorted_a[] = {2, 3, 6, 7, 8, 9, 11};
     
     t = bst_from_sorted_arr(sorted_a, 7);
+	
+	printf("Height of root: %d\n", bst_height(t));
+	printf("Size of tree: %d\n", bst_size(t));
     
-    /*
-    bst_inorder(t);
-
-    bst_preorder(t);
-
-    bst_postorder(t);
+    int *b = bst_to_array(t);
+		
+	printf("A: ");
+	for (i=0; i<7; i++) {
+		printf("%d ", sorted_a[i]);
+	}
+	printf("\n");
+	
+	printf("B: ");
+	for (i=0; i<7; i++) {
+		printf("%d ", b[i]);
+	}
+	printf("\n");
+	free(b);
 
     bst_free(t);
-    */
 }
