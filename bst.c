@@ -278,7 +278,8 @@ static NODE *remove_r(NODE *r, int x, int *success){
 				r = NULL;
 			}
 			
-			else *r = *tmp; // One child
+			// One child
+			else *r = *tmp;
 	    	free(tmp);
 		}
 	
