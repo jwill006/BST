@@ -115,11 +115,9 @@ static NODE* avl_cycle_tree_right(NODE *r) {
 // Cycle switch for insertion
 static NODE* avl_insert_cycle(NODE *r, int x) {
 	int balance = avl_balance_factor(r);
-			
+
 	// Left Left Case
-    if (balance > 1 && x < r->left->val) {
-		return avl_cycle_tree_right(r);
-    }
+	if (balance > 1 && x < r->left->val) return avl_cycle_tree_right(r);
 	
     // Left Right Case
     if (balance > 1 && x > r->left->val) {
@@ -128,16 +126,13 @@ static NODE* avl_insert_cycle(NODE *r, int x) {
     }
 
     // Right Right Case
-    if (balance < -1 && x > r->right->val) {
-        return avl_cycle_tree_left(r);
-	}
+    if (balance < -1 && x > r->right->val) return avl_cycle_tree_left(r);
 
-    // Right Left Case
-    if (balance < -1 && x < r->right->val)
-    {
+	// Right Left Case
+	if (balance < -1 && x < r->right->val) {
 		r->right = avl_cycle_tree_right(r->right);
 		return avl_cycle_tree_left(r);
-    }
+	}
 }
 
 // Cycle switch for deletion
@@ -147,29 +142,23 @@ static NODE* avl_delete_cycle(NODE *r) {
 	int r_balance = avl_balance_factor(r->right);
 			
 	// Left Left Case
-    if (balance > 1 && l_balance >= 0) {
-		return avl_cycle_tree_right(r);
-    }
+    if (balance > 1 && l_balance >= 0) return avl_cycle_tree_right(r);
 	
-    // Left Right Case
+	// Left Right Case
     if (balance > 1 && l_balance < 0) {
 		r->left = avl_cycle_tree_left(r->left);
 		avl_update_node(r);
 		return avl_cycle_tree_right(r);
-		
-    }
-
-    // Right Right Case
-    if (balance < -1 && r_balance <= 0) {
-        return avl_cycle_tree_left(r);
 	}
+	
+	// Right Right Case
+	if (balance < -1 && r_balance <= 0) return avl_cycle_tree_left(r);
 
-    // Right Left Case
-    if (balance < -1 && r_balance > 0)
-    {
+	// Right Left Case
+    if (balance < -1 && r_balance > 0) {
 		r->right = avl_cycle_tree_right(r->right);
 		return avl_cycle_tree_left(r);
-    }
+	}
 }
 
 // Returns 1 if subtree with root r is NOT AVL

@@ -1,17 +1,22 @@
 #include <assert.h>
 #include "bst.h"
 
-void t_num_elem() {
+#define SAMPLE_SIZE 1024
+
+int *gen_random_arr(int size) {
+	int *result = malloc(sizeof(int)*size);
 	int i;
-    int a[] = {8, 2, 6, 9, 11, 3, 7};
+
+	for (i=0; i<size; i++)
+		result[i] = i;
+	for (i=size-1; i>0; i--) {
+		int x = rand()%i;
+		int y = result[i];
+		result[i] = result[x];
+		result[x] = y;
+	}
 	
-    BST_PTR t = bst_create();
-	BST_PTR t2;
-	
-    for(i=0; i<7; i++)
-        bst_insert(t, a[i]);
-	
-	bst_free(t);
+	return result;
 }
 
 void t_height() {
@@ -24,56 +29,51 @@ void t_height() {
     for(i=0; i<7; i++)
         bst_insert(t, a[i]);
 	
+	
+	
+	bst_remove(t,11);
+	bst_remove(t,2);
+	bst_preorder(t);
+	printf("Min elem: %d\n", bst_min(t));
+	printf("Max elem: %d\n", bst_max(t));
+	
+	printf("Nearest elem: %d\n", bst_get_nearest(t,500));
+	printf("Num LEQ: %d\n", bst_num_leq(t,10));
+	
 	bst_free(t);
 	
-}
-
-int *gen_random_arr(int size) {
-	int *elements = malloc(sizeof(int)*size);
-	int i;
-
-	// inizialize
-	for (i = 0; i < size; ++i)
-	  elements[i] = i;
-
-	for (i = size - 1; i > 0; --i) {
-	  // generate random index
-	  int w = rand()%i;
-	  // swap items
-	  int t = elements[i];
-	  elements[i] = elements[w];
-	  elements[w] = t;
-	}
-	
-	return elements;
 }
 
 
 void t_avl() {
 	int i;
-	int size = 1024;
 	BST_PTR t = bst_create();
-	int *a = gen_random_arr(size);
+	int *a = gen_random_arr(SAMPLE_SIZE);
 	
-    for(i=0; i<size; i++)
-        bst_insert(t, i);
-	
-	bst_inorder(t);
-	    	
-	
+    for(i=0; i<SAMPLE_SIZE; i++)
+        bst_insert(t, i);	    	
 	
 	printf("Height of root: %d\n", bst_height(t));
 	printf("Size of tree: %d\n", bst_size(t));
+	printf("Min elem: %d\n", bst_min(t));
+	printf("Max elem: %d\n", bst_max(t));
+	printf("Nearest elem: %d\n", bst_get_nearest(t,500));
+	printf("Num LEQ: %d\n", bst_num_leq(t,10));
 	
-	for(i=0; i<1023; i++) {
+	for(i=0; i<SAMPLE_SIZE-1; i++) {
 		bst_remove(t,a[i]);
 		printf ("Delete %d\n", a[i]);
 	}
 	
-	bst_inorder(t);
+	assert(bst_to_array(t)[0]==a[SAMPLE_SIZE-1]);
 	
 	printf("Height of root: %d\n", bst_height(t));
 	printf("Size of tree: %d\n", bst_size(t));
+	printf("Min elem: %d\n", bst_min(t));
+	printf("Max elem: %d\n", bst_max(t));
+	printf("Nearest elem: %d\n", bst_get_nearest(t,500));
+	printf("Num LEQ: %d\n", bst_num_leq(t,10));
+	
 	free(a);
 	bst_free(t);
 }
@@ -103,6 +103,8 @@ int main(){
     BST_PTR t = bst_create();
 
 	t_avl();
+	
+	// t_height();
     
 
     /* PART 2 */
@@ -115,16 +117,19 @@ int main(){
 
     bst_free(t);
     
-    /* PART 3 (extra) */
     
     int sorted_a[] = {2, 3, 6, 7, 8, 9, 11};
     
     t = bst_from_sorted_arr(sorted_a, 7);
+	int *b = bst_to_array(t);
 	
 	printf("Height of root: %d\n", bst_height(t));
 	printf("Size of tree: %d\n", bst_size(t));
+	
+	printf("ith smallest element: %d\n", bst_get_ith(t,10));
+	printf("Num LEQ: %d\n", bst_num_leq(t,3));
     
-    int *b = bst_to_array(t);
+    
 		
 	printf("A: ");
 	for (i=0; i<7; i++) {
