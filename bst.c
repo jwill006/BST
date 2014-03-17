@@ -257,49 +257,39 @@ static NODE * max_h(NODE *r){
 static NODE *remove_r(NODE *r, int x, int *success){
 	NODE *tmp;
 	
-	if (is_empty_subtree(r))
-	        return r;
- 
-    // Target node is in left subtree
-    if ( x < r->val )
-        r->left = avl_validation(remove_r(r->left, x, success),x,0);
+	if (is_empty_subtree(r)) return r;
 
-    // Target node is in right subtree
-    else if( x > r->val )
-        r->right = avl_validation(remove_r(r->right, x, success),x,0);
+	// Target node is in left subtree
+	if ( x < r->val ) r->left = avl_validation(remove_r(r->left, x, success),x,0);
 
-    // Found node with val x
-    else
-    {
+	// Target node is in right subtree
+	else if( x > r->val ) r->right = avl_validation(remove_r(r->right, x, success),x,0);
+
+	// Found node with val x
+	else {
 		
-        // node has 0 or 1 child
-        if( (is_empty_subtree(r->left)) || (is_empty_subtree(r->right)) )
-        {
-            tmp = (is_not_empty_subtree(r->left) ? r->left : r->right);
-
-            // No children
-            if(is_empty_subtree(tmp))
-            {
-                tmp = r;
-                r = NULL;
-            }
+		// node has 0 or 1 child
+		if( (is_empty_subtree(r->left)) || (is_empty_subtree(r->right)) ) {
+			tmp = (is_not_empty_subtree(r->left) ? r->left : r->right);
 			
-			// One child
-            else {
-				*r = *tmp;
+			// No children
+			if(is_empty_subtree(tmp)) {
+				tmp = r;
+				r = NULL;
 			}
-            free(tmp);
-        }
-		
+			
+			else *r = *tmp; // One child
+	    	free(tmp);
+		}
+	
 		// node has 2 children
-        else
-        {
-            // Copy the node with the smallest val from right subtree and delete it
-            tmp = min_h(r->right);
-            r->val = tmp->val;
-            r->right = avl_validation(remove_r(r->right, tmp->val, success), tmp->val, 0);
-        }
-    }	
+		else {
+			// Copy the node with the smallest val from right subtree and delete it
+			tmp = min_h(r->right);
+			r->val = tmp->val;
+			r->right = avl_validation(remove_r(r->right, tmp->val, success),tmp->val,0);
+		}
+	}
 	return avl_validation(r,x,0);
 }
 
